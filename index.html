@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PostoFiel - Sistema de Fidelidade e Preços</title>
+  
+  <!-- CSS Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons Standalone CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- React 18 CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+  <!-- Babel Standalone CDN -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* Custom CSS Animations & Core Enhancements */
+    @keyframes slideIn {
+      from { transform: translateY(-1rem); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes scaleUp {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes dash {
+      to { stroke-dashoffset: -20; }
+    }
+    .animate-slide-in { animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-scale-up { animation: scaleUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    
+    /* Elegant Custom Scrollbars */
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #52525b; border-radius: 99px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #10B981; }
+  </style>
+</head>
+<body class="bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
+  <div id="root"></div>
+
+  <!-- React Code compiled via Babel Standalone -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // Default Initial Data (matches previous Express database structure)
+    const initialStations = [
+      {
+        id: "1",
+        name: "Posto Petrobras - Av. Paulista",
+        brand: "Petrobras",
+        address: "Av. Paulista, 1000 - Cerqueira César, São Paulo - SP",
+        lat: -23.5615,
+        lng: -46.6560,
+        prices: { gasoline: 5.69, ethanol: 3.59, diesel: 5.89, premiumGas: 7.29 },
+        rating: 4.5,
+        features: ["Loja de Conveniência", "Wi-Fi", "Calibrador"],
+      },
+      {
+        id: "2",
+        name: "Posto Ipiranga - Augusta",
+        brand: "Ipiranga",
+        address: "Rua Augusta, 1500 - Consolação, São Paulo - SP",
+        lat: -23.5585,
+        lng: -46.6610,
+        prices: { gasoline: 5.49, ethanol: 3.49, diesel: 5.95, premiumGas: 7.19 },
+        rating: 4.2,
+        features: ["Loja de Conveniência", "Lava Jato", "Wi-Fi"],
+      },
+      {
+        id: "3",
+        name: "Posto Shell - Av. Rebouças",
+        brand: "Shell",
+        address: "Av. Rebouças, 2200 - Pinheiros, São Paulo - SP",
+        lat: -23.5670,
+        lng: -46.6780,
+        prices: { gasoline: 5.54, ethanol: 3.44, diesel: 5.84, premiumGas: 7.49 },
+        rating: 4.6,
+        features: ["Loja de Conveniência", "Lava Jato", "Calibrador"],
+      },
+      {
+        id: "4",
+        name: "Posto Ale - Brigadeiro",
+        brand: "Ale",
+        address: "Av. Brigadeiro Luís Antônio, 3000 - Jardim Paulista, São Paulo - SP",
+        lat: -23.5720,
+        lng: -46.6510,
+        prices: { gasoline: 5.39, ethanol: 3.39, diesel: 5.79, premiumGas: 6.99 },
+        rating: 4.0,
+        features: ["Wi-Fi", "Calibrador"],
+      },
+      {
+        id: "5",
+        name: "Posto Shell - Av. Europa",
+        brand: "Shell",
+        address: "Av. Europa, 500 - Jardim Europa, São Paulo - SP",
+        lat: -23.5740,
+        lng: -46.6850,
+        prices: { gasoline: 5.89, ethanol: 3.79, diesel: 6.10, premiumGas: 7.89 },
+        rating: 4.8,
+        features: ["Loja de Conveniência", "Lava Jato", "Calibrador", "Wi-Fi"],
+      },
+      {
+        id: "6",
+        name: "Posto B. Branca - Al. Santos",
+        brand: "Independent",
+        address: "Alameda Santos, 450 - Paraíso, São Paulo - SP",
+        lat: -23.5695,
+        lng: -46.6450,
+        prices: { gasoline: 5.24, ethanol: 3.24, diesel: 5.69, premiumGas: 6.84 },
+        rating: 3.8,
+        features: ["Calibrador"],
+      }
+    ];
+
+    const initialUser = {
+      name: "João Pedro",
+      email: "joaopedro.joaopedro12345678910@gmail.com",
+      points: 450,
+      tier: "Bronze",
+      isTwoFactorEnabled: false,
+      isBiometricsConfigured: false,
+      monthlySavingsGoal: 80.00,
+    };
+
+    const initialHistory = [
+      {
+        id: "h1",
+        date: "2026-06-15T14:30:00Z",
+        stationId: "2",
+        stationName: "Posto Ipiranga - Augusta",
+        fuelType: "gasoline",
+        pricePerLiter: 5.49,
+        liters: 35.5,
+        totalCost: 194.90,
+        pointsEarned: 35,
+        paymentMethod: "QR Code",
+      },
+      {
+        id: "h2",
+        date: "2026-06-28T09:15:00Z",
+        stationId: "3",
+        stationName: "Posto Shell - Av. Rebouças",
+        fuelType: "ethanol",
+        pricePerLiter: 3.44,
+        liters: 42.0,
+        totalCost: 144.48,
+        pointsEarned: 42,
+        paymentMethod: "QR Code",
+      },
+      {
+        id: "h3",
+        date: "2026-07-02T18:45:00Z",
+        stationId: "6",
+        stationName: "Posto B. Branca - Al. Santos",
+        fuelType: "gasoline",
+        pricePerLiter: 5.24,
+        liters: 28.0,
+        totalCost: 146.72,
+        pointsEarned: 28,
+        paymentMethod: "QR Code",
+      }
+    ];
+
+    const initialNotifications = [
+      {
+        id: "n1",
+        title: "Preço Baixo!",
+        body: "O Posto B. Branca - Al. Santos reduziu a gasolina para R$ 5,24/L! Aproveite.",
+        timestamp: "2026-07-06T12:00:00Z",
+        read: false,
+        type: "price_drop",
+      },
+      {
+        id: "n2",
+        title: "Dobro de Pontos 🚀",
+        body: "Abasteça hoje com Aditivada no Posto Shell Europa e ganhe o dobro de pontos de fidelidade!",
+        timestamp: "2026-07-05T08:00:00Z",
+        read: true,
+        type: "promo",
+      }
+    ];
+
+    // Helper Component to refresh Lucide Icons automatically on state change
+    function LucideTrigger() {
+      useEffect(() => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
+      return null;
+    }
+
+    // Interactive Map Component
+    function InteractiveMap({ stations, selectedStation, onSelectStation, onFuelClick, darkMode }) {
+      const [activeFilter, setActiveFilter] = useState("all");
+      const [selectedFuelType, setSelectedFuelType] = useState("gasoline");
+      const [searchQuery, setSearchQuery] = useState("");
+      const [isNavigating, setIsNavigating] = useState(false);
+
+      const userCoords = { lat: -23.5645, lng: -46.6620 };
+
+      const stationsWithDistance = useMemo(() => {
+        return stations.map(station => {
+          const dLat = (station.lat - userCoords.lat) * 111;
+          const dLng = (station.lng - userCoords.lng) * 111 * Math.cos(userCoords.lat * Math.PI / 180);
+          const distance = parseFloat(Math.sqrt(dLat * dLat + dLng * dLng).toFixed(2));
+          return { ...station, distance };
+        });
+      }, [stations]);
+
+      const filteredStations = useMemo(() => {
+        let result = [...stationsWithDistance];
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          result = result.filter(s => s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q));
+        }
+        if (activeFilter === "cheapest") {
+          result.sort((a, b) => a.prices[selectedFuelType] - b.prices[selectedFuelType]);
+        } else if (activeFilter === "closest") {
+          result.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+        } else if (activeFilter === "conveniência") {
+          result = result.filter(s => s.features.includes("Loja de Conveniência"));
+        }
+        return result;
+      }, [stationsWithDistance, activeFilter, selectedFuelType, searchQuery]);
+
+      const cheapestStationId = useMemo(() => {
+        if (stations.length === 0) return "";
+        let minId = stations[0].id;
+        let minPrice = stations[0].prices[selectedFuelType];
+        stations.forEach(s => {
+          if (s.prices[selectedFuelType] < minPrice) {
+            minPrice = s.prices[selectedFuelType];
+            minId = s.id;
+          }
+        });
+        return minId;
+      }, [stations, selectedFuelType]);
+
+      const brandColors = {
+        Petrobras: { bg: "bg-emerald-500", text: "text-emerald-500", pin: "#10B981" },
+        Ipiranga: { bg: "bg-yellow-500", text: "text-yellow-600", pin: "#F59E0B" },
+        Shell: { bg: "bg-red-500", text: "text-red-500", pin: "#EF4444" },
+        Ale: { bg: "bg-orange-500", text: "text-orange-500", pin: "#F97316" },
+        Independent: { bg: "bg-gray-500", text: "text-gray-500", pin: "#6B7280" },
+      };
+
+      const mapCenter = { lat: -23.565, lng: -46.660 };
+      const mapScale = 5800;
+
+      const getSvgCoords = (lat, lng) => {
+        const x = 200 + (lng - mapCenter.lng) * mapScale * 1.5;
+        const y = 200 - (lat - mapCenter.lat) * mapScale;
+        return { x, y };
+      };
+
+      const handleStartRoute = () => {
+        setIsNavigating(true);
+        setTimeout(() => setIsNavigating(false), 4500);
+      };
+
+      return (
+        <div id="interactive-map-section" className={`grid grid-cols-1 lg:grid-cols-12 gap-6 rounded-2xl overflow-hidden border p-5 shadow-lg ${
+          darkMode ? "bg-zinc-900 border-zinc-800 text-zinc-100" : "bg-white border-zinc-200 text-zinc-900"
+        }`}>
+          <LucideTrigger />
+          <div className="lg:col-span-5 flex flex-col h-[520px]">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold tracking-tight mb-2 flex items-center gap-2">
+                <i data-lucide="compass" className="w-5 h-5 text-emerald-500"></i>
+                Buscador de Postos & Preços
+              </h2>
+              <p className="text-xs text-zinc-500 mb-4">
+                Compare preços de combustíveis em tempo real nos postos credenciados de São Paulo.
+              </p>
+              
+              <input
+                id="station-search"
+                type="text"
+                placeholder="Buscar por nome ou endereço..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`w-full px-4 py-2.5 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                  darkMode ? "bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500" : "bg-zinc-50 border-zinc-200 text-zinc-900"
+                }`}
+              />
+            </div>
+
+            <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1.5 custom-scrollbar">
+              <button id="filter-all" onClick={() => setActiveFilter("all")} className={`px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 ${activeFilter === "all" ? "bg-emerald-500 text-white shadow-sm" : "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"}`}>Todos</button>
+              <button id="filter-cheapest" onClick={() => setActiveFilter("cheapest")} className={`px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 flex items-center gap-1 ${activeFilter === "cheapest" ? "bg-emerald-500 text-white shadow-sm" : "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"}`}>
+                <i data-lucide="trending-down" className="w-3.5 h-3.5"></i> Mais Baratos
+              </button>
+              <button id="filter-closest" onClick={() => setActiveFilter("closest")} className={`px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 ${activeFilter === "closest" ? "bg-emerald-500 text-white shadow-sm" : "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"}`}>Mais Próximos</button>
+              <button id="filter-store" onClick={() => setActiveFilter("conveniência")} className={`px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 ${activeFilter === "conveniência" ? "bg-emerald-500 text-white shadow-sm" : "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"}`}>Conveniência</button>
+            </div>
+
+            <div className={`p-2 rounded-xl mb-3 flex justify-between items-center ${darkMode ? "bg-zinc-800/50" : "bg-zinc-100/70"}`}>
+              <span className="text-xs font-semibold px-2 text-zinc-500">Comparar:</span>
+              <div className="flex gap-1">
+                {["gasoline", "ethanol", "diesel", "premiumGas"].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setSelectedFuelType(type)}
+                    className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${selectedFuelType === type ? "bg-emerald-600 text-white" : "text-zinc-500"}`}
+                  >
+                    {type === "gasoline" ? "Gasolina" : type === "ethanol" ? "Etanol" : type === "diesel" ? "Diesel" : "Premium"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+              {filteredStations.map((station) => {
+                const isSelected = selectedStation?.id === station.id;
+                const isCheapest = station.id === cheapestStationId;
+                const brandInfo = brandColors[station.brand] || brandColors.Independent;
+
+                return (
+                  <div
+                    id={`station-item-${station.id}`}
+                    key={station.id}
+                    onClick={() => onSelectStation(station)}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                      isSelected ? "border-emerald-500 bg-emerald-500/10 shadow-sm" : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-850"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start gap-1">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`w-2.5 h-2.5 rounded-full ${brandInfo.bg}`}></span>
+                          <h4 className="font-semibold text-sm leading-snug">{station.name}</h4>
+                        </div>
+                        <p className="text-[11px] text-zinc-500 mt-1 line-clamp-1">{station.address}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-[10px] font-medium block text-zinc-500">{station.distance} km de você</span>
+                        <span className="text-xs font-extrabold text-emerald-500 block mt-0.5">R$ {station.prices[selectedFuelType].toFixed(2)}/L</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                      <div className="flex items-center gap-1">
+                        <i data-lucide="star" className="w-3.5 h-3.5 text-amber-500 fill-amber-500"></i>
+                        <span className="text-[11px] font-bold">{station.rating}</span>
+                      </div>
+                      {isCheapest && <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-500 text-white">Melhor Preço</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="lg:col-span-7 h-[520px] rounded-xl overflow-hidden relative border border-zinc-200 dark:border-zinc-800 bg-sky-100 dark:bg-zinc-950 flex flex-col shadow-inner">
+            <div className="absolute inset-0">
+              <svg className="w-full h-full opacity-80" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+                <line x1="20" y1="280" x2="380" y2="100" stroke={darkMode ? "#3f3f46" : "#cbd5e1"} strokeWidth="12" />
+                <line x1="100" y1="50" x2="260" y2="350" stroke={darkMode ? "#3f3f46" : "#cbd5e1"} strokeWidth="8" />
+                <line x1="50" y1="120" x2="190" y2="370" stroke={darkMode ? "#3f3f46" : "#cbd5e1"} strokeWidth="10" />
+                {selectedStation && (
+                  <path
+                    d={`M ${getSvgCoords(userCoords.lat, userCoords.lng).x} ${getSvgCoords(userCoords.lat, userCoords.lng).y} L ${getSvgCoords(selectedStation.lat, selectedStation.lng).x} ${getSvgCoords(selectedStation.lat, selectedStation.lng).y}`}
+                    stroke="#10B981" strokeWidth="3" strokeDasharray="5,5" fill="none"
+                  />
+                )}
+                <circle cx={getSvgCoords(userCoords.lat, userCoords.lng).x} cy={getSvgCoords(userCoords.lat, userCoords.lng).y} r="6" fill="#10B981" stroke="#FFFFFF" strokeWidth="2" />
+              </svg>
+            </div>
+
+            <div className="absolute inset-0 pointer-events-none">
+              {filteredStations.map((station) => {
+                const coords = getSvgCoords(station.lat, station.lng);
+                const isSelected = selectedStation?.id === station.id;
+                const color = brandColors[station.brand]?.bg || "bg-zinc-500";
+                return (
+                  <button
+                    id={`map-pin-${station.id}`}
+                    key={station.id}
+                    onClick={() => onSelectStation(station)}
+                    style={{ left: `${coords.x}px`, top: `${coords.y}px` }}
+                    className="absolute pointer-events-auto transform -translate-x-1/2 -translate-y-1/2 hover:scale-125 transition-transform"
+                  >
+                    <div className={`w-8 h-8 rounded-full ${isSelected ? "bg-emerald-500 text-white" : `${color} text-zinc-950`} flex items-center justify-center shadow-lg border border-white`}>
+                      <span className="text-[10px] font-black">{station.brand[0]}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="absolute bottom-4 left-4 right-4 bg-white/95 dark:bg-zinc-900/95 backdrop-blur border border-zinc-200 dark:border-zinc-800 p-3 rounded-xl shadow-lg pointer-events-auto">
+              {selectedStation ? (
+                <div>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h5 className="font-bold text-xs">{selectedStation.name}</h5>
+                      <p className="text-[10px] text-zinc-500 line-clamp-1">{selectedStation.address}</p>
+                    </div>
+                    <span className="text-xs font-extrabold text-emerald-500">R$ {selectedStation.prices[selectedFuelType].toFixed(2)} / L</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <button id="map-btn-navigate" onClick={handleStartRoute} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-500 flex items-center justify-center gap-1">
+                      <i data-lucide="navigation" className="w-3 h-3"></i> {isNavigating ? "Navegando..." : "Traçar Rota"}
+                    </button>
+                    <button id="map-btn-fuel" onClick={() => onFuelClick(selectedStation)} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-white flex items-center justify-center gap-1">
+                      <i data-lucide="fuel" className="w-3 h-3"></i> Abastecer
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-xs text-zinc-500 py-1">Selecione um posto para traçar rotas e abastecer via QR Code.</div>
+              )}
+            </div>
+
+            {isNavigating && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
+                <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl text-center text-white max-w-xs">
+                  <i data-lucide="navigation" className="w-8 h-8 text-emerald-400 mx-auto mb-2 animate-bounce"></i>
+                  <h4 className="font-bold text-sm">Navegando...</h4>
+                  <p className="text-xs text-zinc-400 mt-1">Conectando ao sistema GPS integrado.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Fueling Calculator Component
+    function FuelingCalculator({ station, user, onPaymentSuccess, darkMode }) {
+      const [fuelType, setFuelType] = useState("gasoline");
+      const [liters, setLiters] = useState("30");
+      const [totalCost, setTotalCost] = useState("");
+      const [showQrModal, setShowQrModal] = useState(false);
+      const [qrStep, setQrStep] = useState("scan");
+      const [authCode, setAuthCode] = useState("");
+      const [errorMessage, setErrorMessage] = useState("");
+
+      const currentPrice = station.prices[fuelType] || 5.00;
+
+      useEffect(() => {
+        if (liters && !isNaN(Number(liters))) {
+          setTotalCost((Number(liters) * currentPrice).toFixed(2));
+        } else {
+          setTotalCost("");
+        }
+      }, [liters, fuelType, station]);
+
+      const handleLitersChange = (val) => {
+        setLiters(val);
+        if (val && !isNaN(Number(val))) {
+          setTotalCost((Number(val) * currentPrice).toFixed(2));
+        } else {
+          setTotalCost("");
+        }
+      };
+
+      const handleCostChange = (val) => {
+        setTotalCost(val);
+        if (val && !isNaN(Number(val))) {
+          setLiters((Number(val) / currentPrice).toFixed(2));
+        } else {
+          setLiters("");
+        }
+      };
+
+      const handleStartPayment = () => {
+        if (!liters || Number(liters) <= 0) {
+          setErrorMessage("Por favor, insira um volume válido.");
+          return;
+        }
+        setErrorMessage("");
+        setShowQrModal(true);
+        setQrStep("scan");
+      };
+
+      const handleScanPump = () => setQrStep("auth");
+
+      const handleAuthenticate = () => {
+        if (user.isTwoFactorEnabled && authCode.length < 4) {
+          setErrorMessage("Código 2FA inválido.");
+          return;
+        }
+        setErrorMessage("");
+        setQrStep("gateway");
+
+        setTimeout(() => {
+          const generatedRecord = {
+            id: "h_" + Date.now(),
+            date: new Date().toISOString(),
+            stationId: station.id,
+            stationName: station.name,
+            fuelType,
+            pricePerLiter: currentPrice,
+            liters: Number(liters),
+            totalCost: Number(totalCost),
+            pointsEarned: Math.floor(Number(totalCost)),
+            paymentMethod: "QR Code",
+          };
+          setQrStep("success");
+          setTimeout(() => {
+            setShowQrModal(false);
+            onPaymentSuccess(generatedRecord);
+          }, 1800);
+        }, 1500);
+      };
+
+      const fuelLabels = { gasoline: "Gasolina Comum", ethanol: "Etanol Hidratado", diesel: "S10 Diesel", premiumGas: "Aditivada" };
+
+      return (
+        <div id="fueling-calculator-section" className={`rounded-2xl border p-5 shadow-lg ${
+          darkMode ? "bg-zinc-900 border-zinc-800 text-zinc-100" : "bg-white border-zinc-200 text-zinc-900"
+        }`}>
+          <LucideTrigger />
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <i data-lucide="calculator" className="w-5 h-5 text-emerald-500"></i>
+                Simulador de Abastecimento
+              </h3>
+              <p className="text-xs text-zinc-500">Posto selecionado: <strong>{station.name}</strong></p>
+            </div>
+            <div className="text-right">
+              <span className="text-xs font-bold text-emerald-500">R$ {currentPrice.toFixed(2)}/L</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+            {Object.keys(station.prices).map((type) => (
+              <button
+                key={type}
+                onClick={() => setFuelType(type)}
+                className={`p-2.5 rounded-xl border text-center flex flex-col items-center justify-center gap-1 ${
+                  fuelType === type ? "border-emerald-500 bg-emerald-500/10 text-emerald-500" : "border-zinc-350"
+                }`}
+              >
+                <span className="text-[10px] font-bold">{fuelLabels[type] || type}</span>
+                <span className="text-xs font-black">R$ {station.prices[type].toFixed(2)}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-bold text-zinc-500 mb-1">Litros (L)</label>
+              <input
+                id="calc-liters-input"
+                type="number"
+                value={liters}
+                onChange={(e) => handleLitersChange(e.target.value)}
+                className="w-full px-4 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-zinc-500 mb-1">Custo Total (R$)</label>
+              <input
+                id="calc-cost-input"
+                type="number"
+                value={totalCost}
+                onChange={(e) => handleCostChange(e.target.value)}
+                className="w-full px-4 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-sm font-black text-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {errorMessage && <p className="text-red-500 text-xs mb-3 font-semibold">{errorMessage}</p>}
+
+          <button
+            id="calc-pay-btn"
+            onClick={handleStartPayment}
+            className="w-full py-3 rounded-xl bg-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all"
+          >
+            <i data-lucide="qr-code" className="w-5 h-5"></i>
+            Pagar via QR Code no App (R$ {Number(totalCost || 0).toFixed(2)})
+          </button>
+
+          {showQrModal && (
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+              <div className={`w-full max-w-sm rounded-2xl border p-6 shadow-2xl relative ${darkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-zinc-200 text-zinc-900"}`}>
+                <button id="qr-close-btn" onClick={() => setShowQrModal(false)} className="absolute top-4 right-4 text-xs font-bold text-zinc-400">Fechar</button>
+
+                {qrStep === "scan" && (
+                  <div className="text-center py-4">
+                    <i data-lucide="qr-code" className="w-16 h-16 text-emerald-500 mx-auto mb-3"></i>
+                    <h4 className="font-bold text-base">Escaneie o QR Code</h4>
+                    <p className="text-xs text-zinc-500 mt-1">Aproxime o leitor da bomba para autorizar.</p>
+                    <button id="qr-simulate-scan" onClick={handleScanPump} className="mt-4 px-4 py-2 bg-emerald-500 text-white text-xs font-bold rounded-lg mx-auto flex items-center gap-1">Simular Leitura</button>
+                  </div>
+                )}
+
+                {qrStep === "auth" && (
+                  <div className="py-4">
+                    <h4 className="font-bold text-center">Autenticação de Segurança</h4>
+                    {user.isBiometricsConfigured ? (
+                      <div className="text-center py-4">
+                        <button id="qr-biometric-auth" onClick={handleAuthenticate} className="w-14 h-14 bg-emerald-500/10 rounded-full mx-auto flex items-center justify-center text-emerald-500 hover:scale-105 transition-all"><i data-lucide="fingerprint" className="w-7 h-7"></i></button>
+                        <p className="text-xs font-bold text-emerald-500 mt-2">Biometria Ativa: Toque para Confirmar</p>
+                      </div>
+                    ) : user.isTwoFactorEnabled ? (
+                      <div className="space-y-3">
+                        <input id="qr-2fa-input" type="password" placeholder="Código 2FA" value={authCode} onChange={(e) => setAuthCode(e.target.value)} className="w-full p-2 bg-zinc-100 dark:bg-zinc-800 text-center rounded-lg focus:outline-none" />
+                        <button id="qr-2fa-auth" onClick={handleAuthenticate} className="w-full py-2 bg-emerald-500 text-white font-bold text-xs rounded-xl">Validar Código 2FA</button>
+                      </div>
+                    ) : (
+                      <button id="qr-instant-auth" onClick={handleAuthenticate} className="w-full py-2.5 bg-emerald-500 text-white font-bold text-xs rounded-xl mt-3">Confirmar Pagamento</button>
+                    )}
+                  </div>
+                )}
+
+                {qrStep === "gateway" && (
+                  <div className="text-center py-8">
+                    <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p className="text-xs font-bold">Processando Pagamento...</p>
+                  </div>
+                )}
+
+                {qrStep === "success" && (
+                  <div className="text-center py-4">
+                    <i data-lucide="check-circle" className="w-12 h-12 text-emerald-500 mx-auto mb-2"></i>
+                    <h4 className="font-bold text-emerald-500">Transação Autorizada!</h4>
+                    <p className="text-xs text-zinc-400 mt-1">Abastecimento liberado na bomba.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Loyalty Dashboard Component
+    function LoyaltyDashboard({ user, onRedeemReward, onShareReward, darkMode }) {
+      const [showVoucher, setShowVoucher] = useState(null);
+      const [shareFeedback, setShareFeedback] = useState("");
+
+      const rewards = [
+        { id: "r1", title: "Café Expresso Grátis", pointsCost: 100, description: "Resgate um café expresso em qualquer conveniência credenciada.", category: "Conveniência" },
+        { id: "r2", title: "R$ 15 Desconto Combustível", pointsCost: 300, description: "Desconto de R$ 15,00 no seu próximo abastecimento via QR Code.", category: "Desconto" },
+        { id: "r3", title: "Lava Jato Completo", pointsCost: 400, description: "Lavagem completa externa com cera protetora de alta qualidade.", category: "Serviço" },
+        { id: "r4", title: "Troca de Óleo Grátis", pointsCost: 1200, description: "Troca completa do óleo lubrificante do motor com filtro incluso.", category: "Serviço" },
+      ];
+
+      const handleRedeem = (reward) => {
+        if (user.points < reward.pointsCost) {
+          alert("Saldo de pontos insuficiente.");
+          return;
+        }
+        onRedeemReward(reward.pointsCost, reward.title);
+        setShowVoucher(reward.title);
+      };
+
+      const handleSocialShare = (platform) => {
+        onShareReward(15);
+        setShareFeedback(`Compartilhado no ${platform}! Ganhou +15 pontos de bônus.`);
+        setTimeout(() => setShareFeedback(""), 4000);
+      };
+
+      const maxPoints = user.tier === "Bronze" ? 600 : user.tier === "Prata" ? 1500 : 3000;
+      const progress = Math.min(100, Math.floor((user.points / maxPoints) * 100));
+
+      return (
+        <div id="loyalty-dashboard-section" className={`rounded-2xl border p-5 shadow-lg ${
+          darkMode ? "bg-zinc-900 border-zinc-800 text-zinc-100" : "bg-white border-zinc-200 text-zinc-900"
+        }`}>
+          <LucideTrigger />
+          <div className="flex justify-between items-center mb-4 border-b border-zinc-100 dark:border-zinc-800 pb-3">
+            <h3 className="font-black text-lg flex items-center gap-2">
+              <i data-lucide="award" className="text-amber-500 w-6 h-6"></i> Clube Fidelidade PostoFiel
+            </h3>
+            <span className="text-xs font-extrabold uppercase px-2.5 py-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-lg">{user.tier}</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 text-center">
+              <span className="text-xs text-zinc-500 uppercase tracking-wider block">Seu Saldo</span>
+              <span className="text-4xl font-black text-amber-500 mt-1 block">{user.points} <span className="text-sm">pts</span></span>
+            </div>
+            <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 flex flex-col justify-center">
+              <div className="flex justify-between text-xs font-bold mb-1">
+                <span>Progresso {user.tier}</span>
+                <span>{user.points} / {maxPoints} pts</span>
+              </div>
+              <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-2.5 rounded-full overflow-hidden">
+                <div className="bg-amber-500 h-full" style={{ width: `${progress}%` }}></div>
+              </div>
+            </div>
+          </div>
+
+          <h4 className="font-bold text-sm mb-3">Catálogo de Resgate</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+            {rewards.map((reward) => {
+              const canAfford = user.points >= reward.pointsCost;
+              return (
+                <div key={reward.id} className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+                  <div>
+                    <h5 className="font-bold text-xs">{reward.title}</h5>
+                    <p className="text-[10px] text-zinc-500 line-clamp-1 mt-0.5">{reward.description}</p>
+                    <span className="text-xs font-extrabold text-amber-500 mt-1 block">{reward.pointsCost} pontos</span>
+                  </div>
+                  <button
+                    id={`redeem-btn-${reward.id}`}
+                    onClick={() => handleRedeem(reward)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-extrabold shrink-0 ${canAfford ? "bg-amber-500 text-white" : "bg-zinc-200 dark:bg-zinc-800 text-zinc-400"}`}
+                  >Resgatar</button>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl flex justify-between items-center flex-wrap gap-2">
+            <div>
+              <h5 className="font-bold text-xs">Indique e Ganhe!</h5>
+              <p className="text-[10px] text-zinc-500 mt-0.5">Compartilhe e ganhe +15 pontos de fidelidade na hora.</p>
+            </div>
+            <div className="flex gap-2">
+              <button id="share-wa-btn" onClick={() => handleSocialShare("WhatsApp")} className="px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-lg">WhatsApp</button>
+              <button id="share-ig-btn" onClick={() => handleSocialShare("Instagram")} className="px-3 py-1 bg-pink-500 text-white text-xs font-bold rounded-lg">Instagram</button>
+              <button id="share-fb-btn" onClick={() => handleSocialShare("Facebook")} className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-lg">Facebook</button>
+            </div>
+          </div>
+          {shareFeedback && <p className="text-emerald-500 font-bold text-xs mt-2 text-center">{shareFeedback}</p>}
+
+          {showVoucher && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+              <div className={`w-full max-w-sm rounded-2xl border p-6 shadow-2xl text-center relative ${darkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-zinc-200 text-zinc-900"}`}>
+                <h4 className="font-bold text-lg text-amber-500">Cupom de Resgate Gerado!</h4>
+                <div className="my-4 p-4 border border-dashed border-amber-500/50 bg-amber-500/5 rounded-xl font-mono text-center">
+                  <span className="text-xs uppercase block text-zinc-500">Código do Voucher</span>
+                  <span className="text-lg font-black text-amber-500 mt-1 block">{showVoucher}</span>
+                  <span className="text-[10px] text-zinc-500 block mt-2">PF-{Math.floor(100000 + Math.random() * 900000)}</span>
+                </div>
+                <button id="close-voucher-btn" onClick={() => setShowVoucher(null)} className="w-full py-2 bg-amber-500 text-white font-bold text-xs rounded-lg">Concluir</button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // History and Analytics Component
+    function HistoryAndAnalytics({ history, user, darkMode }) {
+      const [selectedMonth, setSelectedMonth] = useState("Todos");
+      const [activeMetric, setActiveMetric] = useState("spent");
+      const [showReportEmail, setShowReportEmail] = useState(false);
+      const [reportSuccess, setReportSuccess] = useState("");
+
+      const filteredHistory = useMemo(() => {
+        return history.filter(h => {
+          if (selectedMonth === "Todos") return true;
+          if (selectedMonth === "Julho") return h.date.includes("-07-");
+          if (selectedMonth === "Junho") return h.date.includes("-06-");
+          return true;
+        });
+      }, [history, selectedMonth]);
+
+      const stats = useMemo(() => {
+        let totalSpent = 0, totalLiters = 0;
+        filteredHistory.forEach(h => {
+          totalSpent += h.totalCost;
+          totalLiters += h.liters;
+        });
+        return { totalSpent, totalLiters, savings: totalLiters * 0.42 };
+      }, [filteredHistory]);
+
+      const handleSendReport = () => {
+        setReportSuccess("Enviando relatório...");
+        setTimeout(() => {
+          setReportSuccess(`Sucesso! Relatório consolidado enviado para ${user.email}`);
+          setTimeout(() => {
+            setReportSuccess("");
+            setShowReportEmail(false);
+          }, 2500);
+        }, 1500);
+      };
+
+      return (
+        <div id="history-and-analytics-section" className={`rounded-2xl border p-5 shadow-lg ${
+          darkMode ? "bg-zinc-900 border-zinc-800 text-zinc-100" : "bg-white border-zinc-200 text-zinc-900"
+        }`}>
+          <LucideTrigger />
+          <div className="flex justify-between items-center mb-5 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+            <h3 className="font-bold text-lg flex items-center gap-2">
+              <i data-lucide="history" className="text-emerald-500"></i> Consumo & Histórico
+            </h3>
+            <div className="flex gap-1">
+              {["Todos", "Julho", "Junho"].map(m => (
+                <button key={m} onClick={() => setSelectedMonth(m)} className={`px-2.5 py-1 rounded text-xs font-bold ${selectedMonth === m ? "bg-emerald-500 text-white" : "bg-zinc-100 dark:bg-zinc-800"}`}>{m}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+              <span className="text-[10px] text-zinc-500 uppercase font-black">Total Gasto</span>
+              <span className="text-lg font-black block mt-0.5">R$ {stats.totalSpent.toFixed(2)}</span>
+            </div>
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+              <span className="text-[10px] text-zinc-500 uppercase font-black">Litros Abastecidos</span>
+              <span className="text-lg font-black block mt-0.5">{stats.totalLiters.toFixed(1)} L</span>
+            </div>
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+              <span className="text-[10px] text-zinc-500 uppercase font-black">Economia Total</span>
+              <span className="text-lg font-black block mt-0.5 text-emerald-500">R$ {stats.savings.toFixed(2)}</span>
+            </div>
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+              <span className="text-[10px] text-zinc-500 uppercase font-black">Meta de Economia</span>
+              <span className="text-lg font-black block mt-0.5">R$ {user.monthlySavingsGoal.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* Svg custom chart */}
+          <div className="mb-6 bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-xs font-bold">Gráfico de Consumo</span>
+              <div className="flex gap-1">
+                <button onClick={() => setActiveMetric("spent")} className={`px-2 py-0.5 text-[10px] font-bold ${activeMetric === "spent" ? "bg-emerald-500 text-white" : "text-zinc-500"}`}>Gasto (R$)</button>
+                <button onClick={() => setActiveMetric("liters")} className={`px-2 py-0.5 text-[10px] font-bold ${activeMetric === "liters" ? "bg-emerald-500 text-white" : "text-zinc-500"}`}>Volume (L)</button>
+              </div>
+            </div>
+            <div className="h-32 w-full flex items-end gap-6 justify-center">
+              <div className="text-center">
+                <div className="bg-emerald-500 w-8 rounded-t-md hover:opacity-80 transition-opacity" style={{ height: activeMetric === "spent" ? "60px" : "40px" }}></div>
+                <span className="text-[10px] text-zinc-500 mt-1 block">Junho</span>
+              </div>
+              <div className="text-center">
+                <div className="bg-emerald-500 w-8 rounded-t-md hover:opacity-80 transition-opacity" style={{ height: activeMetric === "spent" ? "100px" : "80px" }}></div>
+                <span className="text-[10px] text-zinc-500 mt-1 block">Julho</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-xs text-zinc-500">Abastecimentos recentes ({filteredHistory.length})</span>
+            <button id="btn-trigger-report" onClick={() => setShowReportEmail(true)} className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-xs font-bold rounded-lg">Gerar Relatório</button>
+          </div>
+
+          <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+            {filteredHistory.map((rec) => (
+              <div key={rec.id} className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/10">
+                <div>
+                  <h5 className="font-bold text-xs">{rec.stationName}</h5>
+                  <span className="text-[10px] text-zinc-500">{new Date(rec.date).toLocaleDateString("pt-BR")} • {rec.fuelType}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-black block">R$ {rec.totalCost.toFixed(2)}</span>
+                  <span className="text-[10px] text-zinc-500 block">{rec.liters}L</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {showReportEmail && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+              <div className={`w-full max-w-sm rounded-2xl border p-6 shadow-2xl relative ${darkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-zinc-200 text-zinc-900"}`}>
+                <button id="report-close-btn" onClick={() => setShowReportEmail(false)} className="absolute top-4 right-4 text-xs font-bold text-zinc-400">Fechar</button>
+                <h4 className="font-black text-sm mb-2">Relatório PDF / E-mail</h4>
+                <p className="text-xs text-zinc-500 mb-4">O PostoFiel enviará um e-mail com todo o detalhamento mensal e gráficos consolidados.</p>
+                {reportSuccess && <p className="text-emerald-500 font-bold text-xs mb-3">{reportSuccess}</p>}
+                <button id="report-send-action-btn" onClick={handleSendReport} className="w-full py-2 bg-emerald-500 text-white font-bold text-xs rounded-xl">Enviar p/ meu E-mail</button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Security & 2FA Component
+    function SecurityAuth({ user, onSecurityUpdate, darkMode }) {
+      const [showBiometricsModal, setShowBiometricsModal] = useState(false);
+      const [show2faSetup, setShow2faSetup] = useState(false);
+      const [verificationCode, setVerificationCode] = useState("");
+
+      const handleToggleBiometrics = () => {
+        if (user.isBiometricsConfigured) {
+          onSecurityUpdate(undefined, false);
+        } else {
+          setShowBiometricsModal(true);
+          setTimeout(() => {
+            onSecurityUpdate(undefined, true);
+            setShowBiometricsModal(false);
+          }, 2000);
+        }
+      };
+
+      const handleToggle2FA = () => {
+        if (user.isTwoFactorEnabled) {
+          onSecurityUpdate(false, undefined);
+        } else {
+          setShow2faSetup(true);
+          setVerificationCode("");
+        }
+      };
+
+      const handleVerify2FACode = () => {
+        if (verificationCode.length < 6) {
+          alert("Código inválido");
+          return;
+        }
+        onSecurityUpdate(true, undefined);
+        setShow2faSetup(false);
+      };
+
+      return (
+        <div id="security-auth-section" className={`rounded-2xl border p-5 shadow-lg ${
+          darkMode ? "bg-zinc-900 border-zinc-800 text-zinc-100" : "bg-white border-zinc-200 text-zinc-900"
+        }`}>
+          <LucideTrigger />
+          <h3 className="font-black text-lg mb-4 flex items-center gap-2">
+            <i data-lucide="shield-check" className="text-emerald-500 w-6 h-6"></i> Segurança Avançada
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-black text-zinc-500 uppercase block">Reconhecimento Biométrico</span>
+                <p className="text-[11px] text-zinc-500 mt-1">Autorização instantânea em bombas credenciadas.</p>
+              </div>
+              <button id="toggle-biometrics-btn" onClick={handleToggleBiometrics} className={`w-full py-2 rounded-xl text-xs font-bold mt-4 ${user.isBiometricsConfigured ? "bg-red-500 text-white" : "bg-emerald-500 text-white"}`}>
+                {user.isBiometricsConfigured ? "Desativar Biometria" : "Ativar Biometria"}
+              </button>
+            </div>
+
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-black text-zinc-500 uppercase block">Dois Fatores (2FA)</span>
+                <p className="text-[11px] text-zinc-500 mt-1">Gera tokens temporários a cada 30 segundos.</p>
+              </div>
+              <button id="toggle-2fa-btn" onClick={handleToggle2FA} className={`w-full py-2 rounded-xl text-xs font-bold mt-4 ${user.isTwoFactorEnabled ? "bg-red-500 text-white" : "bg-emerald-500 text-white"}`}>
+                {user.isTwoFactorEnabled ? "Desativar 2FA" : "Configurar 2FA"}
+              </button>
+            </div>
+          </div>
+
+          {showBiometricsModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50">
+              <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl text-center text-white">
+                <i data-lucide="fingerprint" className="w-12 h-12 text-emerald-500 mx-auto mb-3 animate-pulse"></i>
+                <h4 className="font-bold text-sm">Validando Biometria...</h4>
+                <p className="text-xs text-zinc-400 mt-1">Toque no leitor do smartphone.</p>
+              </div>
+            </div>
+          )}
+
+          {show2faSetup && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+              <div className={`w-full max-w-sm rounded-2xl border p-6 shadow-2xl relative ${darkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-zinc-200 text-zinc-900"}`}>
+                <button id="close-2fa-btn" onClick={() => setShow2faSetup(false)} className="absolute top-4 right-4 text-xs font-bold text-zinc-400">Cancelar</button>
+                <h4 className="font-black text-sm mb-2">Escaneie o QR Code 2FA</h4>
+                <div className="flex justify-center my-3 p-2 bg-white rounded-lg w-fit mx-auto">
+                  <i data-lucide="qr-code" className="w-24 h-24 text-zinc-900"></i>
+                </div>
+                <input id="setup-2fa-code" type="text" maxLength="6" placeholder="Código Verificador" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} className="w-full p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-center font-bold tracking-widest focus:outline-none mb-3" />
+                <button id="validate-2fa-btn" onClick={handleVerify2FACode} className="w-full py-2 bg-emerald-500 text-white font-bold text-xs rounded-xl">Ativar Autenticador 2FA</button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // AI Chat Assistant (FielBot) Component
+    function AiChatAssistant({ darkMode, stations, user }) {
+      const [messages, setMessages] = useState([
+        { id: "init", sender: "assistant", text: "Olá! Sou o **FielBot**, seu assistente PostoFiel. Posso indicar o posto mais barato hoje, listar seus pontos ou auxiliar com resgates. Pergunte qualquer coisa!" }
+      ]);
+      const [inputText, setInputText] = useState("");
+      const [isTyping, setIsTyping] = useState(false);
+      const messagesEndRef = useRef(null);
+
+      useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, [messages, isTyping]);
+
+      const handleSendMessage = (text) => {
+        if (!text.trim()) return;
+
+        const userMsg = { id: Date.now().toString(), sender: "user", text };
+        setMessages(prev => [...prev, userMsg]);
+        setInputText("");
+        setIsTyping(true);
+
+        setTimeout(() => {
+          let responseText = "";
+          const lower = text.toLowerCase();
+
+          if (lower.includes("barato") || lower.includes("menor preço") || lower.includes("gasolina") || lower.includes("preço")) {
+            const sorted = [...stations].sort((a, b) => a.prices.gasoline - b.prices.gasoline);
+            const cheapest = sorted[0];
+            responseText = `O posto mais barato de Gasolina Comum hoje é o **${cheapest.name}** custando apenas **R$ ${cheapest.prices.gasoline.toFixed(2)} / Litro**. Fica localizado em: ${cheapest.address}`;
+          } else if (lower.includes("pontos") || lower.includes("fidelidade") || lower.includes("saldo")) {
+            responseText = `Olá ${user.name}! Você possui atualmente **${user.points} pontos** acumulados no seu perfil (Nível **${user.tier}**). Continue abastecendo pelo QR Code para acumular mais!`;
+          } else if (lower.includes("cafe") || lower.includes("lavagem") || lower.includes("resgate") || lower.includes("desconto")) {
+            responseText = `Temos os seguintes vouchers de resgate ativos: \n- **Café Expresso Grátis**: 100 pontos \n- **R$ 15 Desconto Combustível**: 300 pontos \n- **Lava Jato Completo**: 400 pontos \n- **Troca de Óleo**: 1200 pontos \n\nVocê possui **${user.points} pts** e pode resgatar prêmios elegíveis diretamente na aba 'Clube Fidelidade'!`;
+          } else {
+            responseText = `Olá! Sou o assistente FielBot inteligente. Para encontrar combustíveis baratos, digite 'posto mais barato'. Para consultar seu saldo de pontos, digite 'pontos'. Estou sempre online!`;
+          }
+
+          setMessages(prev => [...prev, { id: "bot_" + Date.now(), sender: "assistant", text: responseText }]);
+          setIsTyping(false);
+        }, 1200);
+      };
+
+      return (
+        <div id="ai-chat-section" className={`rounded-2xl border flex flex-col h-[460px] overflow-hidden p-4 shadow-lg ${
+          darkMode ? "bg-zinc-900 border-zinc-800 text-zinc-100" : "bg-white border-zinc-200 text-zinc-900"
+        }`}>
+          <LucideTrigger />
+          <div className="flex items-center gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-800 mb-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center"><i data-lucide="bot" className="w-5 h-5"></i></div>
+            <div>
+              <h4 className="text-sm font-black">Suporte Inteligente FielBot</h4>
+              <p className="text-[10px] text-zinc-500">Inteligência local 24h ativada</p>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+            {messages.map((m) => (
+              <div key={m.id} className={`flex max-w-[85%] flex-col p-2.5 rounded-2xl text-xs ${m.sender === "user" ? "ml-auto bg-emerald-500 text-white" : "mr-auto bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100"}`}>
+                <p className="whitespace-pre-wrap">
+                  {m.text.split("**").map((part, i) => i % 2 === 1 ? <strong key={i} className="font-extrabold">{part}</strong> : part)}
+                </p>
+              </div>
+            ))}
+            {isTyping && <div className="text-zinc-500 text-xs italic">FielBot digitando...</div>}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="flex gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800 mt-3">
+            <input
+              id="chat-input"
+              type="text"
+              placeholder="Pergunte ao FielBot..."
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSendMessage(inputText)}
+              className="flex-1 p-2 bg-zinc-100 dark:bg-zinc-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            />
+            <button id="chat-send-btn" onClick={() => handleSendMessage(inputText)} className="p-2.5 bg-emerald-500 text-white rounded-xl shadow"><i data-lucide="send" className="w-4 h-4"></i></button>
+          </div>
+        </div>
+      );
+    }
+
+    // Admin Panel Component
+    function AdminPanel({ stations, metrics, onUpdateStationPrice, onAddStation, onTriggerBackup, onTriggerPushPromo, darkMode }) {
+      const [selectedStationId, setSelectedStationId] = useState(stations[0]?.id || "");
+      const [editedPrice, setEditedPrice] = useState("");
+      
+      const [newStationName, setNewStationName] = useState("");
+      const [newStationBrand, setNewStationBrand] = useState("Independent");
+      const [newStationGasoline, setNewStationGasoline] = useState("");
+      const [newStationAddress, setNewStationAddress] = useState("");
+
+      const handleSavePrices = () => {
+        if (!selectedStationId || !editedPrice) return;
+        onUpdateStationPrice(selectedStationId, "gasoline", Number(editedPrice));
+        alert("Preço do combustível reajustado com sucesso!");
+        setEditedPrice("");
+      };
+
+      const handleAdd = () => {
+        if (!newStationName || !newStationAddress || !newStationGasoline) {
+          alert("Por favor, preencha todos os campos obrigatórios.");
+          return;
+        }
+        onAddStation({
+          name: newStationName,
+          brand: newStationBrand,
+          address: newStationAddress,
+          lat: -23.5620 + (Math.random() - 0.5) * 0.02,
+          lng: -46.6550 + (Math.random() - 0.5) * 0.02,
+          prices: { gasoline: Number(newStationGasoline), ethanol: Number(newStationGasoline)*0.65, diesel: Number(newStationGasoline)*1.05, premiumGas: Number(newStationGasoline)*1.25 }
+        });
+        setNewStationName("");
+        setNewStationAddress("");
+        setNewStationGasoline("");
+        alert("Novo posto credenciado com sucesso!");
+      };
+
+      return (
+        <div id="admin-panel-section" className={`rounded-2xl border p-5 shadow-lg ${
+          darkMode ? "bg-zinc-900 border-zinc-800 text-zinc-100" : "bg-white border-zinc-200 text-zinc-900"
+        }`}>
+          <LucideTrigger />
+          <h3 className="font-black text-lg mb-4 flex items-center gap-2">
+            <i data-lucide="settings" className="text-emerald-500 animate-spin [animation-duration:15s] w-6 h-6"></i> PostoFiel Control Panel
+          </h3>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+              <span className="text-[10px] text-zinc-400 block font-bold uppercase">Usuários Ativos</span>
+              <span className="text-lg font-black block mt-0.5">{metrics.activeUsers}</span>
+            </div>
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+              <span className="text-[10px] text-zinc-400 block font-bold uppercase">Vendas (L)</span>
+              <span className="text-lg font-black block mt-0.5">{metrics.totalLitersSold.toFixed(1)} L</span>
+            </div>
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+              <span className="text-[10px] text-zinc-400 block font-bold uppercase">Receita</span>
+              <span className="text-lg font-black block mt-0.5">R$ {metrics.totalBRLRevenue.toFixed(2)}</span>
+            </div>
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+              <span className="text-[10px] text-zinc-400 block font-bold uppercase">Backup Cloud</span>
+              <span className="text-xs font-mono font-bold block mt-1.5 truncate">{new Date(metrics.lastBackupDate).toLocaleTimeString("pt-BR")}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/10 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+              <h4 className="font-bold text-xs uppercase text-zinc-400 mb-3">Reajuste de Preço de Combustível</h4>
+              <div className="space-y-3">
+                <select id="admin-station-select" value={selectedStationId} onChange={(e) => setSelectedStationId(e.target.value)} className="w-full p-2 bg-zinc-100 dark:bg-zinc-800 text-xs rounded-lg">
+                  {stations.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+                <input id="admin-gas-input" type="number" step="0.01" placeholder="Novo preço Gasolina" value={editedPrice} onChange={(e) => setEditedPrice(e.target.value)} className="w-full p-2 bg-zinc-100 dark:bg-zinc-800 text-xs rounded-lg focus:outline-none" />
+                <button id="admin-save-prices-btn" onClick={handleSavePrices} className="w-full py-2 bg-emerald-500 text-white font-bold text-xs rounded-xl">Salvar e Notificar</button>
+              </div>
+            </div>
+
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/10 border border-zinc-200 dark:border-zinc-800 rounded-xl flex flex-col justify-between">
+              <div>
+                <h4 className="font-bold text-xs uppercase text-zinc-400 mb-2">Simulador Push e Cloud Backup</h4>
+                <div className="space-y-2">
+                  <button id="admin-push-pricedrop-btn" onClick={() => onTriggerPushPromo("price_drop")} className="w-full py-2 bg-emerald-500/10 text-emerald-500 font-bold text-xs rounded-xl flex justify-between items-center px-3"><span>Campanha Alerta de Baixa Preço 📉</span> <i data-lucide="chevron-right" className="w-4 h-4"></i></button>
+                  <button id="admin-push-promo-btn" onClick={() => onTriggerPushPromo("promo")} className="w-full py-2 bg-amber-500/10 text-amber-500 font-bold text-xs rounded-xl flex justify-between items-center px-3"><span>Campanha Cupom Exclusivo 🏷️</span> <i data-lucide="chevron-right" className="w-4 h-4"></i></button>
+                </div>
+              </div>
+              <button id="admin-backup-btn" onClick={onTriggerBackup} className="w-full py-2 bg-zinc-800 dark:bg-zinc-700 text-white text-xs font-bold rounded-xl mt-4">Forçar Backup SQL Cloud</button>
+            </div>
+          </div>
+
+          <div className="p-4 bg-zinc-50 dark:bg-zinc-900/10 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+            <h4 className="font-bold text-xs uppercase text-zinc-400 mb-3">Credenciar Nova Unidade de Posto</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
+              <input id="admin-new-name" type="text" placeholder="Nome do Posto" value={newStationName} onChange={(e) => setNewStationName(e.target.value)} className="p-2 bg-zinc-100 dark:bg-zinc-800 text-xs rounded-lg" />
+              <select id="admin-new-brand" value={newStationBrand} onChange={(e) => setNewStationBrand(e.target.value)} className="p-2 bg-zinc-100 dark:bg-zinc-800 text-xs rounded-lg">
+                <option value="Petrobras">Petrobras</option>
+                <option value="Ipiranga">Ipiranga</option>
+                <option value="Shell">Shell</option>
+                <option value="Ale">Ale</option>
+                <option value="Independent">Bandeira Branca</option>
+              </select>
+              <input id="admin-new-price" type="number" placeholder="Gasolina R$" value={newStationGasoline} onChange={(e) => setNewStationGasoline(e.target.value)} className="p-2 bg-zinc-100 dark:bg-zinc-800 text-xs rounded-lg" />
+              <input id="admin-new-addr" type="text" placeholder="Endereço" value={newStationAddress} onChange={(e) => setNewStationAddress(e.target.value)} className="p-2 bg-zinc-100 dark:bg-zinc-800 text-xs rounded-lg" />
+            </div>
+            <button id="admin-add-station-btn" onClick={handleAdd} className="px-4 py-2 bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Cadastrar Posto no Mapa</button>
+          </div>
+        </div>
+      );
+    }
+
+    // Root App Component
+    function App() {
+      const [activeTab, setActiveTab] = useState("mapa");
+      const [darkMode, setDarkMode] = useState(true);
+      const [stations, setStations] = useState(() => {
+        const local = localStorage.getItem("pf_stations");
+        return local ? JSON.parse(local) : initialStations;
+      });
+      const [user, setUser] = useState(() => {
+        const local = localStorage.getItem("pf_user");
+        return local ? JSON.parse(local) : initialUser;
+      });
+      const [history, setHistory] = useState(() => {
+        const local = localStorage.getItem("pf_history");
+        return local ? JSON.parse(local) : initialHistory;
+      });
+      const [notifications, setNotifications] = useState(() => {
+        const local = localStorage.getItem("pf_notifications");
+        return local ? JSON.parse(local) : initialNotifications;
+      });
+      const [metrics, setMetrics] = useState(() => {
+        const local = localStorage.getItem("pf_metrics");
+        return local ? JSON.parse(local) : {
+          totalLitersSold: 105.5,
+          totalBRLRevenue: 486.10,
+          averageGasPrice: 5.54,
+          activeUsers: 1420,
+          lastBackupDate: new Date().toISOString()
+        };
+      });
+
+      const [selectedStation, setSelectedStation] = useState(stations[0] || null);
+      const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+      const [toastNotification, setToastNotification] = useState(null);
+
+      // Persist state in LocalStorage automatically
+      useEffect(() => { localStorage.setItem("pf_stations", JSON.stringify(stations)); }, [stations]);
+      useEffect(() => { localStorage.setItem("pf_user", JSON.stringify(user)); }, [user]);
+      useEffect(() => { localStorage.setItem("pf_history", JSON.stringify(history)); }, [history]);
+      useEffect(() => { localStorage.setItem("pf_notifications", JSON.stringify(notifications)); }, [notifications]);
+      useEffect(() => { localStorage.setItem("pf_metrics", JSON.stringify(metrics)); }, [metrics]);
+
+      // Handle dark mode toggle on root document element
+      useEffect(() => {
+        if (darkMode) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      }, [darkMode]);
+
+      const handleSelectStation = (station) => setSelectedStation(station);
+
+      const handleFuelRedirect = (station) => {
+        setSelectedStation(station);
+        setTimeout(() => {
+          document.getElementById("fueling-calculator-section")?.scrollIntoView({ behavior: "smooth" });
+        }, 150);
+      };
+
+      const handleFuelingSuccess = (record) => {
+        setHistory(prev => [record, ...prev]);
+        
+        // Update user profile
+        const updatedPoints = user.points + record.pointsEarned;
+        let tier = "Bronze";
+        if (updatedPoints >= 1500) tier = "Ouro";
+        else if (updatedPoints >= 600) tier = "Prata";
+
+        setUser(prev => ({ ...prev, points: updatedPoints, tier }));
+
+        // Update metrics
+        setMetrics(prev => ({
+          ...prev,
+          totalLitersSold: prev.totalLitersSold + record.liters,
+          totalBRLRevenue: prev.totalBRLRevenue + record.totalCost
+        }));
+
+        // Trigger notification
+        const loyaltyPush = {
+          id: "n_loyalty_" + Date.now(),
+          title: "Pontos Acumulados! 🎉",
+          body: `Você ganhou +${record.pointsEarned} pontos PostoFiel abastecendo no ${record.stationName}. Saldo atual: ${updatedPoints} pts.`,
+          timestamp: new Date().toISOString(),
+          read: false,
+          type: "loyalty"
+        };
+        setNotifications(prev => [loyaltyPush, ...prev]);
+        setToastNotification(loyaltyPush);
+        setTimeout(() => setToastNotification(null), 5000);
+
+        setTimeout(() => setActiveTab("historico"), 1500);
+      };
+
+      const handleRedeemReward = (pointsCost, rewardTitle) => {
+        setUser(prev => ({ ...prev, points: prev.points - pointsCost }));
+      };
+
+      const handleShareReward = (extraPoints) => {
+        setUser(prev => ({ ...prev, points: prev.points + extraPoints }));
+      };
+
+      const handleSecurityUpdate = (toggle2FA, toggleBiometrics) => {
+        setUser(prev => ({
+          ...prev,
+          isTwoFactorEnabled: toggle2FA !== undefined ? toggle2FA : prev.isTwoFactorEnabled,
+          isBiometricsConfigured: toggleBiometrics !== undefined ? toggleBiometrics : prev.isBiometricsConfigured
+        }));
+      };
+
+      const handleUpdateStationPrice = (stationId, fuelType, newPrice) => {
+        setStations(prev => prev.map(s => s.id === stationId ? { ...s, prices: { ...s.prices, [fuelType]: newPrice } } : s));
+      };
+
+      const handleAddStation = (newStation) => {
+        const payload = { ...newStation, id: (stations.length + 1).toString(), rating: 4.0, features: ["Wi-Fi", "Calibrador"] };
+        setStations(prev => [...prev, payload]);
+      };
+
+      const handleTriggerBackup = () => {
+        setMetrics(prev => ({ ...prev, lastBackupDate: new Date().toISOString() }));
+        alert("Backup redundante armazenado no Cloud SQL.");
+      };
+
+      const handleTriggerPushPromo = (type) => {
+        const alertPush = {
+          id: "n_alert_" + Date.now(),
+          title: type === "price_drop" ? "Queda de preço! 📉" : "Desconto Exclusivo 🏷️",
+          body: type === "price_drop" ? "Gasolina aditivada caiu para R$ 5,39/L no Posto Ale Brigadeiro! Aproveite." : "Use o cupom FIEL10 no QR Code do app e ganhe 10% de desconto no próximo abastecimento!",
+          timestamp: new Date().toISOString(),
+          read: false,
+          type
+        };
+        setNotifications(prev => [alertPush, ...prev]);
+        setToastNotification(alertPush);
+        setTimeout(() => setToastNotification(null), 5000);
+      };
+
+      const handleMarkNotificationsRead = () => {
+        setShowNotificationsDropdown(!showNotificationsDropdown);
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      };
+
+      const unreadCount = notifications.filter(n => !n.read).length;
+
+      return (
+        <div className="min-h-screen transition-all duration-300">
+          <LucideTrigger />
+          {toastNotification && (
+            <div id="push-toast-alert" className="fixed top-5 right-5 z-50 max-w-sm rounded-2xl bg-zinc-900 border border-zinc-800 text-white p-4 shadow-2xl flex gap-3.5 items-start animate-slide-in">
+              <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl"><i data-lucide="bell" className="w-5 h-5 animate-bounce"></i></div>
+              <div className="flex-1 min-w-0">
+                <h5 className="font-bold text-xs text-emerald-400">Notificação Push!</h5>
+                <p className="font-extrabold text-sm mt-1">{toastNotification.title}</p>
+                <p className="text-xs text-zinc-400 mt-1 leading-snug">{toastNotification.body}</p>
+              </div>
+              <button id="toast-dismiss-btn" onClick={() => setToastNotification(null)} className="text-xs text-zinc-500 font-bold">Fechar</button>
+            </div>
+          )}
+
+          <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col min-h-screen gap-6">
+            <header id="app-header" className={`p-4 rounded-2xl border flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md ${darkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"}`}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white shadow-lg"><i data-lucide="flame" className="w-6 h-6 animate-pulse"></i></div>
+                <div>
+                  <h1 className="text-lg font-black tracking-tight flex items-center gap-1">PostoFiel <span className="text-[10px] font-bold bg-emerald-500 text-white px-1.5 py-0.5 rounded uppercase">Fidelidade</span></h1>
+                  <p className="text-[10px] text-zinc-500 font-medium">Buscador Inteligente & Pagamentos via QR Code</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-end">
+                {user && (
+                  <div className={`px-3.5 py-1.5 rounded-xl border flex items-center gap-2 ${darkMode ? "bg-zinc-800/50 border-zinc-700/50" : "bg-zinc-50 border-zinc-200"}`}>
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span className="text-xs font-black text-amber-500">{user.points} <span className="text-[10px] font-semibold text-zinc-500">pts</span></span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 relative">
+                  <button id="header-notification-bell" onClick={handleMarkNotificationsRead} className={`p-2.5 rounded-xl border relative transition-all ${unreadCount > 0 ? "bg-red-500/10 text-red-500 border-red-500/20" : "text-zinc-500"}`}>
+                    <i data-lucide="bell" className="w-4.5 h-4.5"></i>
+                    {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center">{unreadCount}</span>}
+                  </button>
+
+                  {showNotificationsDropdown && (
+                    <div id="notifications-dropdown-menu" className={`absolute top-full right-0 mt-2.5 w-72 rounded-xl border shadow-2xl p-4 z-45 animate-scale-up ${darkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-zinc-200 text-zinc-900"}`}>
+                      <h4 className="font-bold text-xs uppercase tracking-wider text-zinc-400 mb-2">Notificações Push</h4>
+                      <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                        {notifications.map(n => (
+                          <div key={n.id} className="p-2 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[11px]">
+                            <p className="font-bold">{n.title}</p>
+                            <p>{n.body}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <button id="header-darkmode-toggle" onClick={() => setDarkMode(!darkMode)} className="p-2.5 rounded-xl border transition-all text-zinc-500"><i data-lucide={darkMode ? "sun" : "moon"} className={darkMode ? "text-amber-500" : ""}></i></button>
+                </div>
+              </div>
+            </header>
+
+            <nav id="app-navigation-hub" className={`p-1.5 rounded-2xl border flex gap-1 overflow-x-auto shadow-sm custom-scrollbar ${darkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"}`}>
+              <button id="tab-mapa" onClick={() => setActiveTab("mapa")} className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all flex flex-col items-center gap-1 min-w-[90px] ${activeTab === "mapa" ? "bg-emerald-500 text-white shadow" : "text-zinc-500"}`}><i data-lucide="compass" className="w-4.5 h-4.5"></i>Mapa</button>
+              <button id="tab-fidelidade" onClick={() => setActiveTab("fidelidade")} className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all flex flex-col items-center gap-1 min-w-[90px] ${activeTab === "fidelidade" ? "bg-emerald-500 text-white shadow" : "text-zinc-500"}`}><i data-lucide="award" className="w-4.5 h-4.5"></i>Fidelidade</button>
+              <button id="tab-historico" onClick={() => setActiveTab("historico")} className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all flex flex-col items-center gap-1 min-w-[90px] ${activeTab === "historico" ? "bg-emerald-500 text-white shadow" : "text-zinc-500"}`}><i data-lucide="history" className="w-4.5 h-4.5"></i>Histórico</button>
+              <button id="tab-chat" onClick={() => setActiveTab("chat")} className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all flex flex-col items-center gap-1 min-w-[90px] ${activeTab === "chat" ? "bg-emerald-500 text-white shadow" : "text-zinc-500"}`}><i data-lucide="message-square" className="w-4.5 h-4.5"></i>FielBot</button>
+              <button id="tab-seguranca" onClick={() => setActiveTab("seguranca")} className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all flex flex-col items-center gap-1 min-w-[90px] ${activeTab === "seguranca" ? "bg-emerald-500 text-white shadow" : "text-zinc-500"}`}><i data-lucide="shield-check" className="w-4.5 h-4.5"></i>Segurança</button>
+              <button id="tab-admin" onClick={() => setActiveTab("admin")} className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all flex flex-col items-center gap-1 min-w-[90px] ${activeTab === "admin" ? "bg-emerald-500 text-white shadow" : "text-zinc-500"}`}><i data-lucide="settings" className="w-4.5 h-4.5"></i>Admin</button>
+            </nav>
+
+            <main className="flex-1">
+              {activeTab === "mapa" && (
+                <div className="space-y-6">
+                  <InteractiveMap stations={stations} selectedStation={selectedStation} onSelectStation={handleSelectStation} onFuelClick={handleFuelRedirect} darkMode={darkMode} />
+                  {selectedStation && user ? (
+                    <FuelingCalculator station={selectedStation} user={user} onPaymentSuccess={handleFuelingSuccess} darkMode={darkMode} />
+                  ) : (
+                    <div className={`p-6 rounded-2xl border text-center shadow-sm ${darkMode ? "bg-zinc-900 border-zinc-800 text-zinc-500" : "bg-white border-zinc-200 text-zinc-400"}`}>
+                      <i data-lucide="compass" className="w-10 h-10 mx-auto mb-2 opacity-30 animate-pulse"></i>
+                      <p className="text-sm font-bold">Selecione um posto no mapa acima para abastecer.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === "fidelidade" && user && (
+                <LoyaltyDashboard user={user} onRedeemReward={handleRedeemReward} onShareReward={handleShareReward} darkMode={darkMode} />
+              )}
+
+              {activeTab === "historico" && user && (
+                <HistoryAndAnalytics history={history} user={user} darkMode={darkMode} />
+              )}
+
+              {activeTab === "chat" && (
+                <AiChatAssistant darkMode={darkMode} stations={stations} user={user} />
+              )}
+
+              {activeTab === "seguranca" && user && (
+                <SecurityAuth user={user} onSecurityUpdate={handleSecurityUpdate} darkMode={darkMode} />
+              )}
+
+              {activeTab === "admin" && metrics && (
+                <AdminPanel stations={stations} metrics={metrics} onUpdateStationPrice={handleUpdateStationPrice} onAddStation={handleAddStation} onTriggerBackup={handleTriggerBackup} onTriggerPushPromo={handleTriggerPushPromo} darkMode={darkMode} />
+              )}
+            </main>
+
+            <footer className="text-center py-4 text-[10px] text-zinc-500 border-t border-zinc-500/10 mt-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+              <p>© 2026 PostoFiel Inc. Todos os direitos reservados. Rede Credenciada São Paulo, SP.</p>
+              <div className="flex gap-3 font-semibold">
+                <a href="#interactive-map-section" className="hover:text-emerald-500">Mapa</a>
+                <span>•</span>
+                <a href="#loyalty-dashboard-section" className="hover:text-emerald-500">Fidelidade</a>
+                <span>•</span>
+                <a href="#security-auth-section" className="hover:text-emerald-500">Segurança</a>
+              </div>
+            </footer>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById("root"));
+  </script>
+</body>
+</html>
